@@ -54,34 +54,35 @@ int main(){
             for(int i=0; i<512; i++){
                 aut[i] = 0;
             }
-            fscanf(file, "%d", &distance);
-            fscanf(file, "%d", &car_number);
-            for(int i = 0; i<car_number; i++){
-                fscanf(file, "%d", &aut[i]);
+            if (fscanf(file, "%d", &distance) != EOF && fscanf(file, "%d", &car_number) != EOF){
+                for(int i = 0; i<car_number; i++){
+                    if (fscanf(file, "%d", &aut[i]) != EOF);
+                }
             }
             add_station(&BST, distance, car_number, aut);
         } else if(strcmp(line, "demolisci-stazione") == 0){
             int distance;
-            fscanf(file, "%d", &distance);
-            remove_station(BST, distance);
+            if (fscanf(file, "%d", &distance) != EOF){
+                remove_station(BST, distance);
+            }
         } else if (strcmp(line, "aggiungi-auto") == 0){
             int distance, autonomy;
-            fscanf(file, "%d", &distance);
-            fscanf(file, "%d", &autonomy);
-            add_car(BST, distance, autonomy);
+            if ( fscanf(file, "%d", &distance) != EOF && fscanf(file, "%d", &autonomy) != EOF){
+                add_car(BST, distance, autonomy);
+            }
         } else if (strcmp(line, "rottama-auto") == 0){
             int distance, autonomy;
-            fscanf(file, "%d", &distance);
-            fscanf(file, "%d", &autonomy);
-            remove_car(BST, distance, autonomy);
+            if (fscanf(file, "%d", &distance) != EOF && fscanf(file, "%d", &autonomy) != EOF){
+                remove_car(BST, distance, autonomy);
+            }
         } else if (strcmp(line, "pianifica-percorso") == 0){
             int start, end;
-            fscanf(file, "%d", &start);
-            fscanf(file, "%d", &end);
-            if(start < end) {
-                plan_path(BST, start, end);
-            } else {
-                plan_path_reverse(BST, start, end);
+            if (fscanf(file, "%d", &start) != EOF && fscanf(file, "%d", &end) != EOF){
+                if(start < end) {
+                    plan_path(BST, start, end);
+                } else {
+                    plan_path_reverse(BST, start, end);
+                }
             }
         }
     }
@@ -263,10 +264,12 @@ void remove_car(struct station *root, int distance, int autonomy){
 }
 
 void plan_path_reverse(struct station* root, int start, int end){
+    inorder(root);
     struct node *path = NULL;
     struct station *curr = find(root, start);
     struct station *prec = treePredecessor(curr);
     struct station *pprec = treePredecessor(prec);
+    struct station *best;
     int first = 0;
 
     while(prec != NULL && prec->distance > end) {
@@ -284,8 +287,12 @@ void plan_path_reverse(struct station* root, int start, int end){
                 printf("nessun percorso\n");
                 return;
             }
+            if (prec -> distance >= end && pprec->distance < end){
+                break;
+            }
             if(curr->distance - get_max_car(curr) > pprec->distance){
                 insert_in_path(&path, prec->distance, get_max_car(prec));
+                printf("%d \n", prec->distance);
                 curr = prec;
                 prec = pprec;
                 break;
@@ -306,6 +313,7 @@ void plan_path_reverse(struct station* root, int start, int end){
 }
 
 void plan_path(struct station* root, int start, int end){
+    //inorder(root);
     struct node *path = NULL;
     struct station *curr = find(root, end);
     struct station *prec = treePredecessor(curr);
