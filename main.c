@@ -14,6 +14,7 @@ struct station {
 
 struct node{
     int distance;
+    int max_autonomy;
     struct node *next;
 };
 
@@ -28,15 +29,12 @@ void add_car(struct station *root, int distance, int autonomy);
 void remove_car(struct station *root, int distance, int autonomy);
 int get_max_car(struct station *x);
 void plan_path(struct station *root, int start, int end);
-void insert_in_path(struct node **path, int distance);
+void insert_in_path(struct node **path, int distance, int max_autonomy);
+void simplify_path(struct node **path);
 void print_path(struct node *path);
 
 int main(){
     struct station *BST = NULL;
-    int aut[512];
-    for(int i=0; i<512; i++){
-        aut[i] = 0;
-    }
     FILE *file = stdin;
     char line[20];
 
@@ -48,6 +46,10 @@ int main(){
     while(fscanf(file, "%s", line) != EOF){
         if(strcmp(line, "aggiungi-stazione") == 0){
             int distance, car_number;
+            int aut[512];
+            for(int i=0; i<512; i++){
+                aut[i] = 0;
+            }
             fscanf(file, "%d", &distance);
             fscanf(file, "%d", &car_number);
             for(int i = 0; i<car_number; i++){
@@ -86,7 +88,7 @@ int main(){
 void inorder(struct station *root){
     if(root!=NULL) {
         inorder(root->left);
-        printf(" %d ", root->distance);
+        printf(" %d (%d) ", root->distance, get_max_car(root));
         inorder(root->right);
     }
 }
@@ -128,7 +130,7 @@ void add_station(struct station **root, int distance, int car_number, int autono
     } else {
         y->right = temp;
     }
-    printf("aggiunta \n");
+    printf("aggiunta stazione\n");
 }
 
 void remove_station(struct station *root, int distance){
@@ -209,7 +211,7 @@ void add_car(struct station *root, int distance, int autonomy){
         for(int i = 0; i<512; i++){
             if(x->cars[i] == 0){
                 x->cars[i] = autonomy;
-                printf("aggiunta \n");
+                printf("aggiunta macchina\n");
                 return;
             }
         }
@@ -235,31 +237,40 @@ void remove_car(struct station *root, int distance, int autonomy){
 
 void plan_path(struct station* root, int start, int end){
     struct node *path = NULL;
-    struct station *x = find(root, start);
-    //printf(" %d ", x->distance);
-    int car_autonomy = get_max_car(x);
-    struct station *y = treeSuccessor(x);
+    struct station *curr = find(root, start);;
+    struct station *next = treeSuccessor(curr);
+    struct station *succ = NULL;
     int first = 0;
 
-    while(y->distance < end){
-        if(y->distance <= x->distance + car_autonomy){
+    while(next->distance < end){
+        succ = treeSuccessor(next);
+        if(next->distance <= curr->distance + get_max_car(curr)){
             if(first == 0){
-                insert_in_path(&path, start);
+                insert_in_path(&path, start, get_max_car(curr));
                 first = 1;
             }
-            insert_in_path(&path, y->distance);
+            //if(succ->distance <= curr->distance + get_max_car(curr)){
+              //  next = treeSuccessor(next);
+            //} else {
+            if (succ->distance <= next->distance + get_max_car(next)) {
+                insert_in_path(&path, next->distance, get_max_car(next));
+                curr = next;
+                next = treeSuccessor(curr);
+            } else {
+                next = treeSuccessor(next);
+            }
+            //}
+        } else {
+            next = treeSuccessor(next);
+            if(curr->distance == start || next->distance > end){
+                printf("nessun percorso \n");
+                return;
+            }
         }
-        x = y;
-        car_autonomy = get_max_car(x);
-        y = treeSuccessor(x);
     }
 
-    if(path == NULL){
-        printf("nessun percorso \n");
-        return;
-    }
-
-    insert_in_path(&path, y->distance);
+    insert_in_path(&path, next->distance);
+    simplify_path(&path);
     print_path(path);
     free(path);
 }
@@ -274,9 +285,10 @@ int get_max_car(struct station* x){
     return max;
 }
 
-void insert_in_path(struct node **path, int distance){
+void insert_in_path(struct node **path, int distance, int max_autonomy){
     struct node *temp = malloc(sizeof(struct node));
     temp->distance = distance;
+    temp->max_autonomy = max_autonomy;
     temp->next = NULL;
     if(*path == NULL){
         *path = temp;
@@ -290,9 +302,16 @@ void insert_in_path(struct node **path, int distance){
     }
 }
 
+void simplify_path(struct node **path){
+    struct node *next, *curr;
+    curr = *path;
+    next = curr->next;
+
+}
+
 void print_path(struct node *path){
     while(path != NULL){
-        printf("%d ", path->distance);
+        printf("%d (%d) ", path->distance, path->max_autonomy);
         path = path->next;
     }
     printf("\n");
