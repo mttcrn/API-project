@@ -32,9 +32,10 @@ void add_car(struct station *root, int distance, int autonomy);
 void remove_car(struct station *root, int distance, int autonomy);
 int get_max_car(struct station *x);
 void plan_path(struct station *root, int start, int end);
-void plan_path_inverse(struct station *root, int start, int end);
+void plan_path_reverse(struct station *root, int start, int end);
 void insert_in_path(struct node **path, int distance, int max_autonomy);
 void print_path(struct node *path);
+void print_path_reverse(struct node *path);
 
 int main(){
     struct station *BST = NULL;
@@ -80,7 +81,7 @@ int main(){
             if(start < end) {
                 plan_path(BST, start, end);
             } else {
-                plan_path_inverse(BST, start, end);
+                plan_path_reverse(BST, start, end);
             }
         }
     }
@@ -101,7 +102,7 @@ void inorder(struct station *root){
 void add_station(struct station **root, int distance, int car_number, int autonomy[512]){
     //If the station is already present
     if(find(*root, distance) != NULL){
-        printf("non aggiunta \n");
+        printf("non aggiunta\n");
         return;
     }
 
@@ -135,13 +136,13 @@ void add_station(struct station **root, int distance, int car_number, int autono
     } else {
         y->right = temp;
     }
-    printf("aggiunta stazione\n");
+    printf("aggiunta\n");
 }
 
 void remove_station(struct station *root, int distance){
     struct station *z = find(root, distance);
     if(z == NULL){
-        printf("non demolita \n");
+        printf("non demolita\n");
     } else {
         struct station *y, *x;
         if (z->left == NULL || z->right == NULL) {
@@ -172,7 +173,7 @@ void remove_station(struct station *root, int distance){
         }
 
         free(y);
-        printf("demolita \n");
+        printf("demolita\n");
     }
 }
 
@@ -231,62 +232,75 @@ struct station* find(struct station *x, int distance){
 void add_car(struct station *root, int distance, int autonomy){
     struct station *x = find(root, distance);
     if(x == NULL){
-        printf("non aggiunta \n");
+        printf("non aggiunta\n");
     } else {
         for(int i = 0; i<512; i++){
             if(x->cars[i] == 0){
                 x->cars[i] = autonomy;
-                printf("aggiunta macchina\n");
+                printf("aggiunta\n");
                 return;
             }
         }
     }
-    printf("non aggiunta \n");
+    printf("non aggiunta\n");
 }
 
 void remove_car(struct station *root, int distance, int autonomy){
     struct station *x = find(root, distance);
     if(x == NULL){
-        printf("non rottamata \n");
+        printf("non rottamata\n");
         return;
     } else {
         for(int i = 0; i<512; i++){
             if(x->cars[i] == autonomy){
                 x->cars[i] = 0;
-                printf("rottamata \n");
+                printf("rottamata\n");
                 return;
             }
         }
     }
-    printf("non rottamata \n");
+    printf("non rottamata\n");
 }
 
-void plan_path_inverse(struct station* root, int start, int end){
+void plan_path_reverse(struct station* root, int start, int end){
     struct node *path = NULL;
     struct station *curr = find(root, start);
     struct station *prec = treePredecessor(curr);
     struct station *pprec = treePredecessor(prec);
     int first = 0;
 
-    while(prec->distance > end){
+    while(prec != NULL && prec->distance > end) {
         if(first == 0){
             insert_in_path(&path, start, get_max_car(curr));
             first = 1;
         }
-        while(prec->distance + get_max_car(prec) >= curr->distance){
-            if (pprec->distance + get_max_car(pprec) < curr->distance ) {
+        if(curr->distance - get_max_car(curr) > prec->distance){
+            printf("nessun percorso\n");
+            return;
+        }
+        while(prec != NULL && curr->distance - get_max_car(curr) <= prec->distance){
+            pprec = treePredecessor(prec);
+            if(pprec == NULL || prec == NULL || prec->distance < end){
+                printf("nessun percorso\n");
+                return;
+            }
+            if(curr->distance - get_max_car(curr) > pprec->distance){
                 insert_in_path(&path, prec->distance, get_max_car(prec));
                 curr = prec;
                 prec = pprec;
                 break;
             }
             prec = treePredecessor(prec);
-            pprec = treePredecessor(prec);
         }
     }
 
+    if(prec == NULL || curr->distance - get_max_car(curr) > prec->distance){
+        printf("nessun percorso\n");
+        return;
+    }
+
     insert_in_path(&path, prec->distance, get_max_car(prec));
-    print_path(path);
+    print_path_reverse(path);
     printf("\n");
     free(path);
 }
@@ -298,14 +312,19 @@ void plan_path(struct station* root, int start, int end){
     struct station *pprec = treePredecessor(prec);
     int first = 0;
 
-    while(prec->distance > start){
+    while(prec != NULL && prec->distance > start){
         if(first == 0){
             insert_in_path(&path, end, get_max_car(curr));
             first = 1;
         }
-        while(prec->distance + get_max_car(prec) >= curr->distance){
-            if(prec->distance < start || prec == NULL){
-                printf("nessun percorso \n");
+        if(prec->distance + get_max_car(prec) < curr->distance){
+            prec = treePredecessor(prec);
+            pprec = treePredecessor(pprec);
+        }
+        while(prec->distance + get_max_car(prec) >= curr->distance && prec!=NULL){
+            pprec = treePredecessor(prec);
+            if(prec->distance < start || prec == NULL || pprec == NULL){
+                printf("nessun percorso\n");
                 return;
             }
             if (pprec->distance + get_max_car(pprec) < curr->distance) {
@@ -315,12 +334,11 @@ void plan_path(struct station* root, int start, int end){
                 break;
             }
             prec = treePredecessor(prec);
-            pprec = treePredecessor(prec);
         }
     }
 
     if(prec->distance + get_max_car(prec) < curr->distance){
-        printf("nessun percorso \n");
+        printf("nessun percorso\n");
         return;
     }
     insert_in_path(&path, prec->distance, get_max_car(prec));
@@ -362,4 +380,11 @@ void print_path(struct node *path){
     }
     print_path(path->next);
     printf("%d ", path->distance);
+}
+
+void print_path_reverse(struct node *path){
+    while(path != NULL){
+        printf("%d ", path->distance);
+        path = path->next;
+    }
 }
