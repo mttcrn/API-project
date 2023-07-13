@@ -12,6 +12,7 @@ struct station {
     struct station *left, *right, *parent;
 };
 
+//Node of the path
 struct node{
     int distance;
     int max_autonomy;
@@ -23,14 +24,16 @@ struct station* find(struct station *x, int distance);
 void add_station(struct station **root, int distance, int car_number, int autonomy[512]);
 void remove_station(struct station *root, int distance);
 struct station* treeSuccessor(struct station *x);
+struct station* treePredecessor(struct station *x);
 struct station* treeMinimum(struct station *x);
+struct station* treeMaximum(struct station *x);
 void inorder(struct station *root);
 void add_car(struct station *root, int distance, int autonomy);
 void remove_car(struct station *root, int distance, int autonomy);
 int get_max_car(struct station *x);
 void plan_path(struct station *root, int start, int end);
+void plan_path_inverse(struct station *root, int start, int end);
 void insert_in_path(struct node **path, int distance, int max_autonomy);
-void simplify_path(struct node **path);
 void print_path(struct node *path);
 
 int main(){
@@ -74,11 +77,13 @@ int main(){
             int start, end;
             fscanf(file, "%d", &start);
             fscanf(file, "%d", &end);
-            plan_path(BST, start, end);
+            if(start < end) {
+                plan_path(BST, start, end);
+            } else {
+                plan_path_inverse(BST, start, end);
+            }
         }
     }
-
-    inorder(BST);
 
     fclose(file);
     free(BST);
@@ -178,6 +183,13 @@ struct station* treeMinimum(struct station *x){
     return x;
 }
 
+struct station* treeMaximum(struct station *x){
+    while(x->right != NULL){
+        x = x->right;
+    }
+    return x;
+}
+
 struct station* treeSuccessor(struct station *x){
     if(x->right != NULL){
         return treeMinimum(x->right);
@@ -185,6 +197,19 @@ struct station* treeSuccessor(struct station *x){
     struct station *y;
     y = x->parent;
     while(y != NULL && x == y->right){
+        x = y;
+        y = y->parent;
+    }
+    return y;
+}
+
+struct station* treePredecessor(struct station *x){
+    if(x->left != NULL){
+        return treeMaximum(x->left);
+    }
+    struct station *y;
+    y = x->parent;
+    while(y != NULL && x == y->left){
         x = y;
         y = y->parent;
     }
@@ -223,6 +248,7 @@ void remove_car(struct station *root, int distance, int autonomy){
     struct station *x = find(root, distance);
     if(x == NULL){
         printf("non rottamata \n");
+        return;
     } else {
         for(int i = 0; i<512; i++){
             if(x->cars[i] == autonomy){
@@ -235,43 +261,71 @@ void remove_car(struct station *root, int distance, int autonomy){
     printf("non rottamata \n");
 }
 
-void plan_path(struct station* root, int start, int end){
+void plan_path_inverse(struct station* root, int start, int end){
     struct node *path = NULL;
-    struct station *curr = find(root, start);;
-    struct station *next = treeSuccessor(curr);
-    struct station *succ = NULL;
+    struct station *curr = find(root, start);
+    struct station *prec = treePredecessor(curr);
+    struct station *pprec = treePredecessor(prec);
     int first = 0;
 
-    while(next->distance < end){
-        succ = treeSuccessor(next);
-        if(next->distance <= curr->distance + get_max_car(curr)){
-            if(first == 0){
-                insert_in_path(&path, start, get_max_car(curr));
-                first = 1;
+    while(prec->distance > end){
+        if(first == 0){
+            insert_in_path(&path, start, get_max_car(curr));
+            first = 1;
+        }
+        while(prec->distance + get_max_car(prec) >= curr->distance){
+            if (pprec->distance + get_max_car(pprec) < curr->distance ) {
+                insert_in_path(&path, prec->distance, get_max_car(prec));
+                curr = prec;
+                prec = pprec;
+                break;
             }
-            //if(succ->distance <= curr->distance + get_max_car(curr)){
-              //  next = treeSuccessor(next);
-            //} else {
-            if (succ->distance <= next->distance + get_max_car(next)) {
-                insert_in_path(&path, next->distance, get_max_car(next));
-                curr = next;
-                next = treeSuccessor(curr);
-            } else {
-                next = treeSuccessor(next);
-            }
-            //}
-        } else {
-            next = treeSuccessor(next);
-            if(curr->distance == start || next->distance > end){
-                printf("nessun percorso \n");
-                return;
-            }
+            prec = treePredecessor(prec);
+            pprec = treePredecessor(prec);
         }
     }
 
-    insert_in_path(&path, next->distance, get_max_car(next));
-    simplify_path(&path);
+    insert_in_path(&path, prec->distance, get_max_car(prec));
     print_path(path);
+    printf("\n");
+    free(path);
+}
+
+void plan_path(struct station* root, int start, int end){
+    struct node *path = NULL;
+    struct station *curr = find(root, end);
+    struct station *prec = treePredecessor(curr);
+    struct station *pprec = treePredecessor(prec);
+    int first = 0;
+
+    while(prec->distance > start){
+        if(first == 0){
+            insert_in_path(&path, end, get_max_car(curr));
+            first = 1;
+        }
+        while(prec->distance + get_max_car(prec) >= curr->distance){
+            if(prec->distance < start || prec == NULL){
+                printf("nessun percorso \n");
+                return;
+            }
+            if (pprec->distance + get_max_car(pprec) < curr->distance) {
+                insert_in_path(&path, prec->distance, get_max_car(prec));
+                curr = prec;
+                prec = pprec;
+                break;
+            }
+            prec = treePredecessor(prec);
+            pprec = treePredecessor(prec);
+        }
+    }
+
+    if(prec->distance + get_max_car(prec) < curr->distance){
+        printf("nessun percorso \n");
+        return;
+    }
+    insert_in_path(&path, prec->distance, get_max_car(prec));
+    print_path(path);
+    printf("\n");
     free(path);
 }
 
@@ -302,17 +356,10 @@ void insert_in_path(struct node **path, int distance, int max_autonomy){
     }
 }
 
-void simplify_path(struct node **path){
-    struct node *next, *curr;
-    curr = *path;
-    next = curr->next;
-
-}
-
 void print_path(struct node *path){
-    while(path != NULL){
-        printf("%d (%d) ", path->distance, path->max_autonomy);
-        path = path->next;
+    if(path == NULL){
+        return;
     }
-    printf("\n");
+    print_path(path->next);
+    printf("%d ", path->distance);
 }
