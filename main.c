@@ -269,7 +269,7 @@ void plan_path(struct station* root, int start, int end){
         }
     }
 
-    insert_in_path(&path, next->distance);
+    insert_in_path(&path, next->distance, get_max_car(next));
     simplify_path(&path);
     print_path(path);
     free(path);
