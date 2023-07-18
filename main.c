@@ -163,19 +163,10 @@ int main(){
     return 0;
 }
 
-void free_tree(struct station **root){
-    if(*root == NULL){
-        return;
-    }
-    free_tree(&(*root)->left);
-    free_tree(&(*root)->right);
-    free(*root);
-}
-
 void inorder(struct station *root){
     if(root!=NULL) {
         inorder(root->left);
-        printf("%d ", root->distance);
+        printf("%d (%d)", root->distance, root->max_autonomy);
         inorder(root->right);
     }
 }
@@ -419,6 +410,16 @@ void free_queue(struct queue *queue){
     queue->rear = NULL;
 }
 
+/**Frees the given BST.*/
+void free_tree(struct station **root){
+    if(*root == NULL){
+        return;
+    }
+    free_tree(&(*root)->left);
+    free_tree(&(*root)->right);
+    free(*root);
+}
+
 /**BFS algorithm: find the shortest path from start to end in which start < end.*/
 void plan_path_bfs(struct station *root, int start, int end){
     clear_prev(root);
@@ -458,11 +459,12 @@ void plan_path_bfs(struct station *root, int start, int end){
 void plan_path_bfs_reverse(struct station *root, int start, int end){
     clear_prev(root);
     struct station *curr = find(root, end);
-    struct station *next;
+    struct station *next, *succ = treeSuccessor(curr);
     struct queue queue = {NULL, NULL};
     enqueue(&queue, curr->distance);
     curr->prev = NULL;
     curr->visited = 1;
+    int flag;
 
     while(queue.front != NULL){
         curr = find(root, queue.front->distance);
@@ -474,15 +476,20 @@ void plan_path_bfs_reverse(struct station *root, int start, int end){
             free_queue(&queue);
             return;
         }
-        next = treeSuccessor(curr);
+        next = succ;
+        flag = 1;
         while(next != NULL){
             if(next->distance > start){
                 break;
             }
-            if(next->distance - next->max_autonomy <= curr->distance && next->visited == 0){
+            if(next->visited == 0 && curr->distance >= next->distance - next->max_autonomy) {
                 enqueue(&queue, next->distance);
                 next->visited = 1;
                 next->prev = curr;
+                if(flag == 1){
+                    flag = 0;
+                    succ = next;
+                }
             }
             next = treeSuccessor(next);
         }
