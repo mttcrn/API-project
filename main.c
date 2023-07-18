@@ -4,21 +4,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 //Node of the BST
 struct station {
     int distance;
     int car_number;
-    int max_autonomy;
     int cars[512];
+    int max_autonomy;
     int visited;
     struct station *left, *right, *parent, *prev;
 };
 
 //Node of the path
 struct node{
+    int distance;
     struct node *next;
-    struct station *station;
 };
 
 struct queue {
@@ -42,57 +43,123 @@ void free_tree(struct station **root);
 
 int main(){
     struct station *BST = NULL;
-    FILE *file = stdin;
     char line[20];
 
-    if(file == NULL){
-        perror("Errore nell'apertura del file");
-        return 1;
-    }
+    char c;
+    int i;
+    while((c = getc(stdin)) != EOF){
 
-    while(fscanf(file, "%s", line) != EOF){
+        for(i=0; i<19 && c!=' ' && c!=EOF; i++){
+            line[i] = c;
+            c = getc(stdin);
+        }
+        line[i] = '\0';
+
         if(strcmp(line, "aggiungi-stazione") == 0){
-            int distance, car_number;
             int aut[512];
-            for(int i=0; i<512; i++){
+            for(i=0; i<512; i++){
                 aut[i] = 0;
             }
-            if (fscanf(file, "%d %d", &distance, &car_number) != EOF){
-                for(int i = 0; i<car_number; i++){
-                    if (fscanf(file, "%d", &aut[i]) == EOF) break;
-                }
-                add_station(&BST, distance, car_number, aut);
+            int distance = 0;
+            while(!isdigit(c)){
+                c = getc(stdin);
             }
+            while(isdigit(c)){
+                distance = distance * 10 + (c - '0');
+                c = getc(stdin);
+            }
+            int car_number = 0;
+            while(!isdigit(c)){
+                c = getc(stdin);
+            }
+            while(isdigit(c)){
+                car_number = car_number * 10 + (c - '0');
+                c = getc(stdin);
+            }
+            for(i = 0; i<car_number; i++){
+                while(!isdigit(c)){
+                    c = getc(stdin);
+                }
+                while(isdigit(c)){
+                    aut[i] = aut[i] * 10 + (c - '0');
+                    c = getc(stdin);
+                }
+            }
+            add_station(&BST, distance, car_number, aut);
         } else if(strcmp(line, "demolisci-stazione") == 0){
-            int distance;
-            if (fscanf(file, "%d", &distance) != EOF){
-                remove_station(&BST, distance);
+            int distance = 0;
+            while(!isdigit(c)){
+                c = getc(stdin);
             }
+            while(isdigit(c)){
+                distance = distance * 10 + (c - '0');
+                c = getc(stdin);
+            }
+            remove_station(&BST, distance);
         } else if (strcmp(line, "aggiungi-auto") == 0){
-            int distance, autonomy;
-            if (fscanf(file, "%d %d", &distance, &autonomy) != EOF){
-                add_car(BST, distance, autonomy);
+            int distance = 0;
+            while(!isdigit(c)){
+                c = getc(stdin);
             }
+            while(isdigit(c)){
+                distance = distance * 10 + (c - '0');
+                c = getc(stdin);
+            }
+            int autonomy = 0;
+            while(!isdigit(c)){
+                c = getc(stdin);
+            }
+            while(isdigit(c)){
+                autonomy = autonomy * 10 + (c - '0');
+                c = getc(stdin);
+            }
+            add_car(BST, distance, autonomy);
         } else if (strcmp(line, "rottama-auto") == 0){
-            int distance, autonomy;
-            if (fscanf(file, "%d %d", &distance, &autonomy) != EOF){
-                remove_car(BST, distance, autonomy);
+            int distance = 0;
+            while(!isdigit(c)){
+                c = getc(stdin);
             }
+            while(isdigit(c)){
+                distance = distance * 10 + (c - '0');
+                c = getc(stdin);
+            }
+            int autonomy = 0;
+            while(!isdigit(c)){
+                c = getc(stdin);
+            }
+            while(isdigit(c)){
+                autonomy = autonomy * 10 + (c - '0');
+                c = getc(stdin);
+            }
+            remove_car(BST, distance, autonomy);
         } else if (strcmp(line, "pianifica-percorso") == 0){
-            int start, end;
-            if (fscanf(file, "%d %d", &start, &end) != EOF){
-                if(start < end) {
-                    plan_path_bfs(BST, start, end);
-                    printf("\n");
-                } else {
-                    plan_path_bfs_reverse(BST, start, end);
-                    printf("\n");
-                }
+            int start = 0;
+            while(!isdigit(c)){
+                c = getc(stdin);
+            }
+            while(isdigit(c)){
+                start = start * 10 + (c - '0');
+                c = getc(stdin);
+            }
+            int end = 0;
+            while(!isdigit(c)){
+                c = getc(stdin);
+            }
+            while(isdigit(c)){
+                end = end * 10 + (c - '0');
+                c = getc(stdin);
+            }
+            if(start < end) {
+                plan_path_bfs(BST, start, end);
+                printf("\n");
+            } else {
+                plan_path_bfs_reverse(BST, start, end);
+                printf("\n");
             }
         }
     }
 
-    fclose(file);
+    fclose(stdin);
     free_tree(&BST);
     return 0;
 }
@@ -307,10 +374,10 @@ void clear_prev(struct station *root){
 }
 
 /**Enqueues a new node to the given queue.*/
-void enqueue(struct queue *queue, struct station *station){
+void enqueue(struct queue *queue, int distance){
     struct node* temp = (struct node*)malloc(sizeof(struct node));
+    temp->distance = distance;
     temp->next = NULL;
-    temp->station = station;
     if (queue->rear == NULL) {
         queue->front = queue->rear = temp;
         return;
@@ -333,12 +400,12 @@ void dequeue(struct queue *queue){
 }
 
 /**It print the given path from start to end (with start < end)*/
-void print_path_reverse(struct station *curr){
-    if(curr == NULL){
+void print_path_reverse(struct station *path){
+    if(path == NULL){
         return;
     }
-    print_path_reverse(curr->prev);
-    printf("%d ", curr->distance);
+    print_path_reverse(path->prev);
+    printf("%d ", path->distance);
 }
 
 /**Frees the given queue.*/
@@ -357,26 +424,25 @@ void free_queue(struct queue *queue){
 void plan_path_bfs(struct station *root, int start, int end){
     clear_prev(root);
     struct station *curr = find(root, start);
-    struct station *next;
+    struct station *next = treeSuccessor(curr);;
     struct queue queue = {NULL, NULL};
-    enqueue(&queue,curr);
+    enqueue(&queue, curr->distance);
     curr->prev = NULL;
     curr->visited = 1;
 
     while(queue.front != NULL){
-        curr = queue.front->station;
+        curr = find(root, queue.front->distance);
         if(curr->distance == end){
             print_path_reverse(curr);
             free_queue(&queue);
             return;
         }
-        next = treeSuccessor(curr);
         while(next != NULL && curr->distance + curr->max_autonomy >= next->distance){
             if(next->distance > end){
                 break;
             }
             if(next->visited == 0){
-                enqueue(&queue,next);
+                enqueue(&queue,next->distance);
                 next->visited = 1;
                 next->prev = curr;
             }
@@ -395,12 +461,12 @@ void plan_path_bfs_reverse(struct station *root, int start, int end){
     struct station *curr = find(root, end);
     struct station *next;
     struct queue queue = {NULL, NULL};
-    enqueue(&queue, curr);
+    enqueue(&queue, curr->distance);
     curr->prev = NULL;
     curr->visited = 1;
 
     while(queue.front != NULL){
-        curr = queue.front->station;
+        curr = find(root, queue.front->distance);
         if(curr->distance == start){
             while(curr != NULL){
                 printf("%d ", curr->distance);
@@ -414,8 +480,8 @@ void plan_path_bfs_reverse(struct station *root, int start, int end){
             if(next->distance > start){
                 break;
             }
-            if(next->visited == 0 && next->distance - next->max_autonomy <= curr->distance){
-                enqueue(&queue, next);
+            if(next->distance - next->max_autonomy <= curr->distance && next->visited == 0){
+                enqueue(&queue, next->distance);
                 next->visited = 1;
                 next->prev = curr;
             }
