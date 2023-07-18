@@ -1,3 +1,0 @@
-/mnt/c/Users/motti/Documents/GitHub/API-project/cmake-build-debug/CMakeFiles/API_project.dir
-/mnt/c/Users/motti/Documents/GitHub/API-project/cmake-build-debug/CMakeFiles/edit_cache.dir
-/mnt/c/Users/motti/Documents/GitHub/API-project/cmake-build-debug/CMakeFiles/rebuild_cache.dir
