@@ -17,8 +17,8 @@ struct station {
 
 //Node of the path
 struct node{
-    int distance;
     struct node *next;
+    struct station *station;
 };
 
 struct queue {
@@ -32,11 +32,9 @@ void add_station(struct station **root, int distance,  int car_number, int *auto
 void remove_station(struct station **root, int distance);
 struct station* treeSuccessor(struct station *x);
 struct station* treeMinimum(struct station *x);
-struct station* treeMaximum(struct station *x);
 void inorder(struct station *root);
 void add_car(struct station *root, int distance, int autonomy);
 void remove_car(struct station *root, int distance, int autonomy);
-int get_max_car(struct station *x);
 void clear_prev(struct station *root);
 void plan_path_bfs(struct station *root, int start, int end);
 void plan_path_bfs_reverse(struct station *root, int start, int end);
@@ -56,6 +54,9 @@ int main(){
         if(strcmp(line, "aggiungi-stazione") == 0){
             int distance, car_number;
             int aut[512];
+            for(int i=0; i<512; i++){
+                aut[i] = 0;
+            }
             if (fscanf(file, "%d %d", &distance, &car_number) != EOF){
                 for(int i = 0; i<car_number; i++){
                     if (fscanf(file, "%d", &aut[i]) == EOF) break;
@@ -134,9 +135,9 @@ void add_station(struct station **root, int distance, int car_number, int *auton
     temp = (struct station*)malloc(sizeof(struct station));
     temp->distance = distance;
     temp->car_number = car_number;
-    memcpy(temp->cars, autonomy, car_number);
     int max = 0;
     for(int i = 0; i < car_number; i++){
+        temp->cars[i] = autonomy[i];
         if(autonomy[i] > max){
             max = autonomy[i];
         }
@@ -192,7 +193,9 @@ void remove_station(struct station **root, int distance){
             z->distance = y->distance;
             z->car_number = y->car_number;
             z->max_autonomy = y->max_autonomy;
-            memcpy(z->cars, y->cars, y->car_number);
+            for(int i=0; i<y->car_number; i++){
+                z->cars[i] = y->cars[i];
+            }
         }
 
         free(y);
@@ -304,10 +307,10 @@ void clear_prev(struct station *root){
 }
 
 /**Enqueues a new node to the given queue.*/
-void enqueue(struct queue *queue, int distance){
+void enqueue(struct queue *queue, struct station *station){
     struct node* temp = (struct node*)malloc(sizeof(struct node));
-    temp->distance = distance;
     temp->next = NULL;
+    temp->station = station;
     if (queue->rear == NULL) {
         queue->front = queue->rear = temp;
         return;
@@ -329,13 +332,13 @@ void dequeue(struct queue *queue){
     free(temp);
 }
 
-/**It print the given linked list from end to start.*/
-void print_path_reverse(struct node *path){
-    if(path == NULL){
+/**It print the given path from start to end (with start < end)*/
+void print_path_reverse(struct station *curr){
+    if(curr == NULL){
         return;
     }
-    print_path_reverse(path->next);
-    printf("%d ", path->distance);
+    print_path_reverse(curr->prev);
+    printf("%d ", curr->distance);
 }
 
 /**Frees the given queue.*/
@@ -354,32 +357,27 @@ void free_queue(struct queue *queue){
 void plan_path_bfs(struct station *root, int start, int end){
     clear_prev(root);
     struct station *curr = find(root, start);
-    struct station *next = treeSuccessor(curr);
+    struct station *next;
     struct queue queue = {NULL, NULL};
-    struct queue path = {NULL, NULL};
-    enqueue(&queue, curr->distance);
+    enqueue(&queue,curr);
     curr->prev = NULL;
     curr->visited = 1;
 
     while(queue.front != NULL){
-        curr = find(root, queue.front->distance);
+        curr = queue.front->station;
         if(curr->distance == end){
-            while(curr != NULL){
-                enqueue(&path, curr->distance);
-                curr = curr->prev;
-            }
-            print_path_reverse(path.front);
-            free_queue(&path);
+            print_path_reverse(curr);
             free_queue(&queue);
             return;
         }
+        next = treeSuccessor(curr);
         while(next != NULL && curr->distance + curr->max_autonomy >= next->distance){
             if(next->distance > end){
                 break;
             }
             if(next->visited == 0){
+                enqueue(&queue,next);
                 next->visited = 1;
-                enqueue(&queue, next->distance);
                 next->prev = curr;
             }
             next = treeSuccessor(next);
@@ -397,13 +395,12 @@ void plan_path_bfs_reverse(struct station *root, int start, int end){
     struct station *curr = find(root, end);
     struct station *next;
     struct queue queue = {NULL, NULL};
-    enqueue(&queue, curr->distance);
+    enqueue(&queue, curr);
     curr->prev = NULL;
     curr->visited = 1;
 
     while(queue.front != NULL){
-        curr = find(root, queue.front->distance);
-        next = treeSuccessor(curr);
+        curr = queue.front->station;
         if(curr->distance == start){
             while(curr != NULL){
                 printf("%d ", curr->distance);
@@ -412,16 +409,15 @@ void plan_path_bfs_reverse(struct station *root, int start, int end){
             free_queue(&queue);
             return;
         }
+        next = treeSuccessor(curr);
         while(next != NULL){
             if(next->distance > start){
                 break;
             }
             if(next->visited == 0 && next->distance - next->max_autonomy <= curr->distance){
-                enqueue(&queue, next->distance);
+                enqueue(&queue, next);
                 next->visited = 1;
-                if(next->prev == NULL){
-                    next->prev = curr;
-                }
+                next->prev = curr;
             }
             next = treeSuccessor(next);
         }
