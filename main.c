@@ -1,5 +1,5 @@
 //
-// Created by motti on 10/07/2023.
+// Created by Caterina Motti on 10/07/2023.
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +16,7 @@ struct station {
     struct station *left, *right, *parent, *prev;
 };
 
-//Node of the path
+//Node of the queue
 struct node{
     int distance;
     struct node *next;
@@ -163,6 +163,7 @@ int main(){
     return 0;
 }
 
+/**Prints the BST in order (from minimum to maximum value).*/
 void inorder(struct station *root){
     if(root!=NULL) {
         inorder(root->left);
