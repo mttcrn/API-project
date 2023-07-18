@@ -47,11 +47,11 @@ int main(){
 
     char c;
     int i;
-    while((c = getc(stdin)) != EOF){
+    while((c = getc_unlocked(stdin)) != EOF){
 
         for(i=0; i<19 && c!=' ' && c!=EOF; i++){
             line[i] = c;
-            c = getc(stdin);
+            c = getc_unlocked(stdin);
         }
         line[i] = '\0';
 
@@ -62,92 +62,92 @@ int main(){
             }
             int distance = 0;
             while(!isdigit(c)){
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             while(isdigit(c)){
                 distance = distance * 10 + (c - '0');
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             int car_number = 0;
             while(!isdigit(c)){
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             while(isdigit(c)){
                 car_number = car_number * 10 + (c - '0');
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             for(i = 0; i<car_number; i++){
                 while(!isdigit(c)){
-                    c = getc(stdin);
+                    c = getc_unlocked(stdin);
                 }
                 while(isdigit(c)){
                     aut[i] = aut[i] * 10 + (c - '0');
-                    c = getc(stdin);
+                    c = getc_unlocked(stdin);
                 }
             }
             add_station(&BST, distance, car_number, aut);
         } else if(strcmp(line, "demolisci-stazione") == 0){
             int distance = 0;
             while(!isdigit(c)){
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             while(isdigit(c)){
                 distance = distance * 10 + (c - '0');
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             remove_station(&BST, distance);
         } else if (strcmp(line, "aggiungi-auto") == 0){
             int distance = 0;
             while(!isdigit(c)){
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             while(isdigit(c)){
                 distance = distance * 10 + (c - '0');
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             int autonomy = 0;
             while(!isdigit(c)){
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             while(isdigit(c)){
                 autonomy = autonomy * 10 + (c - '0');
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             add_car(BST, distance, autonomy);
         } else if (strcmp(line, "rottama-auto") == 0){
             int distance = 0;
             while(!isdigit(c)){
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             while(isdigit(c)){
                 distance = distance * 10 + (c - '0');
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             int autonomy = 0;
             while(!isdigit(c)){
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             while(isdigit(c)){
                 autonomy = autonomy * 10 + (c - '0');
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             remove_car(BST, distance, autonomy);
         } else if (strcmp(line, "pianifica-percorso") == 0){
             int start = 0;
             while(!isdigit(c)){
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             while(isdigit(c)){
                 start = start * 10 + (c - '0');
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             int end = 0;
             while(!isdigit(c)){
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             while(isdigit(c)){
                 end = end * 10 + (c - '0');
-                c = getc(stdin);
+                c = getc_unlocked(stdin);
             }
             if(start < end) {
                 plan_path_bfs(BST, start, end);
@@ -159,7 +159,6 @@ int main(){
         }
     }
 
-    fclose(stdin);
     free_tree(&BST);
     return 0;
 }

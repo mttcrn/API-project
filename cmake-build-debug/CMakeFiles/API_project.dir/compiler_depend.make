@@ -54,7 +54,8 @@ CMakeFiles/API_project.dir/main.c.o: /mnt/c/Users/motti/Documents/GitHub/API-pro
   /usr/include/string.h \
   /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
-  /usr/include/strings.h
+  /usr/include/strings.h \
+  /usr/include/ctype.h
 
 
 /usr/include/strings.h:
@@ -114,6 +115,8 @@ CMakeFiles/API_project.dir/main.c.o: /mnt/c/Users/motti/Documents/GitHub/API-pro
 /usr/include/x86_64-linux-gnu/bits/_G_config.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/7/include/stdarg.h:
+
+/usr/include/ctype.h:
 
 /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:
 
