@@ -1,5 +1,7 @@
-# Final exam of "Algorithms and Data Structures" - Polimi Computer Science Engineering - A.Y. 2022/2023.
+# Algorithms and Data Structures Project 2022/2023.
 The project provides a practical example of applying data structures and algorithms to solve real-world problem.
+
+Grade obtained: 30/30.
 
 ## Summary
 
